@@ -35,11 +35,13 @@ bson * bson_empty(bson * obj){
     return bson_init(obj, data, 0);
 }
 
-void bson_copy(bson* out, const bson* in){
-    if (!out) return;
+int bson_copy(bson* out, const bson* in){
+    if (!out) return 0;
     out->data = bson_malloc(bson_size(in));
+    if (!out->data) return 0;
     out->owned = 1;
     memcpy(out->data, in->data, bson_size(in));
+    return 1;
 }
 
 bson * bson_from_buffer(bson * b, bson_buffer * buf){
@@ -248,7 +250,7 @@ bson_type bson_iterator_next( bson_iterator * i ){
             char msg[] = "unknown type: 000000000000";
             bson_numstr(msg+14, (unsigned)(i->cur[0]));
             bson_fatal_msg(0, msg);
-            return 0;
+            return bson_error;
         }
     }
     
@@ -399,6 +401,9 @@ void bson_iterator_subiterator(const bson_iterator * i, bson_iterator * sub){
 
 bson_buffer * bson_buffer_init( bson_buffer * b ){
     b->buf = (char*)bson_malloc( initialBufferSize );
+    if (!b->buf)
+        return 0;
+
     b->bufSize = initialBufferSize;
     b->cur = b->buf + 4;
     b->finished = 0;
@@ -428,16 +433,20 @@ bson_buffer * bson_ensure_space( bson_buffer * b , const int bytesNeeded ){
     char * orig = b->buf;
     int new_size;
 
-    if (b->finished)
+    if (b->finished) {
         bson_fatal_msg(!!b->buf, "trying to append to finished buffer");
+        return NULL;
+    }
 
     if (pos + bytesNeeded <= b->bufSize)
         return b;
 
     new_size = 1.5 * (b->bufSize + bytesNeeded);
     b->buf = realloc(b->buf, new_size);
-    if (!b->buf)
+    if (!b->buf) {
         bson_fatal_msg(!!b->buf, "realloc() failed");
+        return NULL;
+    }
 
     b->bufSize = new_size;
     b->cur += b->buf - orig;
@@ -625,7 +634,11 @@ bson_buffer * bson_append_finish_object( bson_buffer * b ){
 
 void* bson_malloc(int size){
     void* p = malloc(size);
-    bson_fatal_msg(!!p, "malloc() failed");
+    if (!p) {
+        bson_fatal_msg(0, "malloc() failed");
+        return NULL;
+    }
+
     return p;
 }
 
@@ -641,12 +654,13 @@ void bson_fatal( int ok ){
     bson_fatal_msg(ok, "");
 }
 
-void bson_fatal_msg( int ok , const char* msg){
+int bson_fatal_msg( int ok , const char* msg){
     if (ok)
-        return;
+        return 1;
 
     if (err_handler){
         err_handler(msg);
+        return 0;
     }
 
     fprintf( stderr , "error: %s\n" , msg );

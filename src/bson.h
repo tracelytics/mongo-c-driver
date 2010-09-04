@@ -24,7 +24,8 @@
 MONGO_EXTERN_C_START
 
 typedef enum {
-    bson_eoo=0 ,
+    bson_error=-1,
+    bson_eoo=0,
     bson_double=1,
     bson_string=2,
     bson_object=3,
@@ -81,7 +82,7 @@ typedef int64_t bson_date_t; /* milliseconds since epoch UTC */
 
 
 bson * bson_empty(bson * obj); /* returns pointer to static empty bson object */
-void bson_copy(bson* out, const bson* in); /* puts data in new buffer. NOOP if out==NULL */
+int bson_copy(bson* out, const bson* in); /* puts data in new buffer. NOOP if out==NULL */
 bson * bson_from_buffer(bson * b, bson_buffer * buf);
 bson * bson_init( bson * b , char * data , bson_bool_t mine );
 bson * bson_init_safe( bson * b , char * data , bson_bool_t mine , size_t buflen);
@@ -213,7 +214,7 @@ bson_err_handler set_bson_err_handler(bson_err_handler func);
 
 /* does nothing is ok != 0 */
 void bson_fatal( int ok );
-void bson_fatal_msg( int ok, const char* msg );
+int bson_fatal_msg( int ok, const char* msg );
 
 MONGO_EXTERN_C_END
 #endif
