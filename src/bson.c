@@ -51,6 +51,20 @@ bson * bson_init( bson * b , char * data , bson_bool_t mine ){
     b->owned = mine;
     return b;
 }
+
+bson * bson_init_safe( bson * b , char * data , bson_bool_t mine , size_t buflen ) {
+    b->data = data;
+    b->owned = mine;
+
+    if (buflen < 5)
+        return NULL;
+
+    if (bson_size(b) > buflen)
+        return NULL;
+
+    return b;
+}
+
 int bson_size(const bson * b ){
     int i;
     if ( ! b || ! b->data )
