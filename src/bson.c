@@ -59,10 +59,10 @@ bson * bson_init_safe( bson * b , char * data , bson_bool_t mine , size_t buflen
     b->owned = mine;
 
     if (buflen < 5)
-        return NULL;
+        return 0;
 
     if (bson_size(b) > buflen)
-        return NULL;
+        return 0;
 
     return b;
 }
@@ -632,11 +632,11 @@ bson_buffer * bson_append_finish_object( bson_buffer * b ){
     return b;
 }
 
-void* bson_malloc(int size){
+void * bson_malloc(int size){
     void* p = malloc(size);
     if (!p) {
         bson_fatal_msg(0, "malloc() failed");
-        return NULL;
+        return 0;
     }
 
     return p;
